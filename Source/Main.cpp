@@ -1,4 +1,4 @@
-﻿#include "imgui.h"
+#include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
@@ -38,6 +38,14 @@ int main(int, char**)
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SetSwapInterval(1);
+
+    // Create SDL_Renderer
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer == nullptr)
+    {
+        printf("Error: SDL_CreateRenderer(): %s\n", SDL_GetError());
+        return -1;
+    }
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -105,16 +113,19 @@ int main(int, char**)
             ImVec2 image_size = ImVec2(100.0f, 100.0f);
             ImGui::Image((void*)(intptr_t)texture, image_size);
 
-            // Draw a line
-            ImDrawList* draw_list = ImGui::GetWindowDrawList();
-            draw_list->AddLine(ImVec2(windowPos.x + 50, windowPos.y +450), ImVec2(windowPos.x + 200, windowPos.y + 200), IM_COL32(255, 0, 0, 255), 3.0f);
+            // Draw a line using SDL_Renderer
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            SDL_RenderDrawLine(renderer, windowPos.x + 50, windowPos.y + 450, windowPos.x + 200, windowPos.y + 200);
 
-            // Draw a rectangle
-            draw_list->AddRect(ImVec2(windowPos.x + 300, windowPos.y + 300), ImVec2(windowPos.x + 400, windowPos.y + 400), IM_COL32(0, 255, 0, 255), 0.0f, 0, 3.0f);
-            //filled rectangle
-            ImVec2 p_min = ImVec2(windowPos.x +300, windowPos.y + 500);
-            ImVec2 p_max = ImVec2(windowPos.x + 400, windowPos.y + 600);
-            draw_list->AddRectFilled(p_min, p_max, IM_COL32(0, 0, 255, 255));
+            // Draw a rectangle using SDL_Renderer
+            SDL_Rect rect = { windowPos.x + 300, windowPos.y + 300, 100, 100 };
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+            SDL_RenderDrawRect(renderer, &rect);
+
+            // Draw a filled rectangle using SDL_Renderer
+            SDL_Rect filled_rect = { windowPos.x + 300, windowPos.y + 500, 100, 100 };
+            SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+            SDL_RenderFillRect(renderer, &filled_rect);
 
             ImGui::End();
 
@@ -167,6 +178,7 @@ int main(int, char**)
     ImGui::DestroyContext();
 
     SDL_GL_DeleteContext(gl_context);
+    SDL_DestroyRenderer(renderer); // Destroy the renderer
     SDL_DestroyWindow(window);
     SDL_Quit();
 
